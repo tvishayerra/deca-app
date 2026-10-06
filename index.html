@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DECA Interactive Quiz</title>
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons for modern icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app" class="app-container">
+        <!-- Upload State -->
+        <div id="upload-screen" class="screen active">
+            <div class="glass-card upload-card">
+                <div class="logo-container">
+                    <i class="ph ph-exam"></i>
+                </div>
+                <h1>DECA Exam Interactive Quiz</h1>
+                <p>Upload a DECA exam PDF to generate an interactive quiz with grading, explanations, and PI codes.</p>
+                
+                <div class="upload-area" id="drop-zone">
+                    <input type="file" id="pdf-upload" accept="application/pdf" hidden>
+                    <i class="ph ph-upload-simple upload-icon"></i>
+                    <p><strong>Click to browse</strong> or drag and drop your PDF here</p>
+                </div>
+                
+                <div id="loading-indicator" class="loading hidden">
+                    <div class="spinner"></div>
+                    <p>Parsing exam data...</p>
+                </div>
+                <div id="error-message" class="error hidden"></div>
+
+                <div class="library-panel" id="library-panel" style="display: none;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                        <h3>Previous Exams</h3>
+                    </div>
+                    <div class="library-grid" id="library-grid">
+                        <!-- Exam cards injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen">
+            <div class="glass-card upload-card">
+                <div class="logo-container" style="color: var(--success);">
+                    <i class="ph ph-check-circle"></i>
+                </div>
+                <h2>Exam Ready!</h2>
+                <p id="exam-stats-text" style="color: var(--text-muted); margin-bottom: 2rem;">We found 100 questions in this exam.</p>
+                
+                <div class="settings-panel">
+                    <h3>Quiz Settings</h3>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="setting-timer" checked>
+                            Enable 75-Minute Timer
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <input type="checkbox" id="setting-shuffle">
+                            Shuffle Questions
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label for="setting-count">Number of Questions (1-100):</label>
+                        <input type="number" id="setting-count" min="1" max="100" value="100">
+                    </div>
+                </div>
+
+                <button id="begin-btn" class="btn primary-btn" style="width: 100%; font-size: 1.2rem; padding: 1rem;">Begin Exam</button>
+            </div>
+        </div>
+
+        <!-- Quiz State -->
+        <div id="quiz-screen" class="screen">
+            <header class="quiz-header glass-header">
+                <div class="header-left">
+                    <h2>DECA Exam</h2>
+                </div>
+                <div class="header-right">
+                    <div class="timer" id="timer-container">
+                        <i class="ph ph-timer"></i>
+                        <span id="timer-display">75:00</span>
+                    </div>
+                    <button id="submit-btn" class="btn primary-btn">Submit Exam</button>
+                </div>
+            </header>
+
+            <main class="quiz-layout">
+                <div class="question-container glass-card">
+                    <div class="question-header">
+                        <span class="question-number" id="q-number">Question 1 of 100</span>
+                        <div class="nav-arrows">
+                            <button id="prev-btn" class="icon-btn" disabled><i class="ph ph-caret-left"></i></button>
+                            <button id="next-btn" class="icon-btn"><i class="ph ph-caret-right"></i></button>
+                        </div>
+                    </div>
+                    <p class="question-text" id="q-text">Loading question...</p>
+                    <div class="options-container" id="options-container">
+                        <!-- Options injected via JS -->
+                    </div>
+                </div>
+
+                <aside class="navigator glass-card">
+                    <h3>Question Navigator</h3>
+                    <div class="grid-nav" id="grid-nav">
+                        <!-- Grid items injected via JS -->
+                    </div>
+                </aside>
+            </main>
+        </div>
+
+        <!-- Results State -->
+        <div id="results-screen" class="screen">
+            <header class="results-header glass-header">
+                <h2>Exam Results</h2>
+                <div style="display: flex; gap: 0.75rem;">
+                    <button id="copy-tracker-btn" class="btn primary-btn"><i class="ph ph-copy"></i> Copy to Exam Tracker</button>
+                    <button id="restart-btn" class="btn secondary-btn">Take Another Exam</button>
+                </div>
+            </header>
+            
+            <main class="results-layout">
+                <div class="score-card glass-card">
+                    <div class="score-circle">
+                        <svg viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" id="score-circle-path" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <text x="18" y="20.35" class="percentage" id="score-text">0%</text>
+                        </svg>
+                    </div>
+                    <div class="score-stats">
+                        <p>Total Correct: <span id="correct-count">0</span>/100</p>
+                    </div>
+                </div>
+
+                <div class="review-container glass-card" id="review-container">
+                    <!-- Review items injected via JS -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Exam Tracker Modal -->
+    <div id="tracker-modal" class="modal-overlay hidden">
+        <div class="modal-card glass-card">
+            <h3><i class="ph ph-table"></i> Copy to Exam Tracker</h3>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Fill in the exam details below. The data will be copied as rows ready to paste into Google Sheets.</p>
+            <div class="modal-field">
+                <label for="tracker-date">Date</label>
+                <input type="date" id="tracker-date">
+            </div>
+            <div class="modal-field">
+                <label for="tracker-exam-num">Exam Number</label>
+                <input type="number" id="tracker-exam-num" placeholder="e.g. 1267">
+            </div>
+            <div class="modal-field">
+                <label for="tracker-level">Exam Level</label>
+                <select id="tracker-level">
+                    <option value="regionals">Regionals</option>
+                    <option value="states">States</option>
+                    <option value="nationals">Nationals</option>
+                    <option value="ICDC">ICDC</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                <button id="tracker-confirm-btn" class="btn primary-btn" style="flex: 1;"><i class="ph ph-clipboard"></i> Copy to Clipboard</button>
+                <button id="tracker-cancel-btn" class="btn secondary-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF.js for parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Include the worker explicitly as a script to bypass file:/// and CORS restrictions -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
