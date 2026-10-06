@@ -299,34 +299,54 @@ function showToast(msg) {
 // --- Functions ---
 
 async function handleFile(file) {
-    if (file.type !== 'application/pdf') {
-        showError('Please upload a valid PDF file.');
+    const fileName = file.name;
+    const isPDF = file.type === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf');
+    const isCustom = fileName.toLowerCase().endsWith('.decaexam') || fileName.toLowerCase().endsWith('.json');
+
+    if (!isPDF && !isCustom) {
+        showError('Please upload a valid PDF or .decaexam file.');
         return;
     }
-    const fileName = file.name;
 
     showError('');
     dropZone.classList.add('hidden');
     loadingIndicator.classList.remove('hidden');
 
     try {
-        const text = await extractTextFromPDF(file);
-        
-        loadingIndicator.querySelector('p').textContent = 'Analyzing questions and answer key...';
-        await new Promise(r => setTimeout(r, 100)); // Allow UI to update
-        
-        try {
-            parseDECAExam(text);
-        } catch (e) {
-            loadingIndicator.querySelector('p').textContent = 'Parse Error: ' + e.message;
-            loadingIndicator.querySelector('.spinner').style.display = 'none';
-            return;
-        }
-        
-        if (questions.length === 0) {
-            loadingIndicator.querySelector('p').textContent = 'Error: Could not find any questions. Make sure it is a standard DECA exam.';
-            loadingIndicator.querySelector('.spinner').style.display = 'none';
-            return;
+        if (isCustom) {
+            loadingIndicator.querySelector('p').textContent = 'Loading custom exam...';
+            const text = await file.text();
+            try {
+                const examData = JSON.parse(text);
+                if (examData && examData.questions && Array.isArray(examData.questions)) {
+                    questions = examData.questions;
+                } else {
+                    throw new Error("Invalid .decaexam format");
+                }
+            } catch(e) {
+                loadingIndicator.querySelector('p').textContent = 'Error: Invalid custom exam file.';
+                loadingIndicator.querySelector('.spinner').style.display = 'none';
+                return;
+            }
+        } else {
+            const text = await extractTextFromPDF(file);
+            
+            loadingIndicator.querySelector('p').textContent = 'Analyzing questions and answer key...';
+            await new Promise(r => setTimeout(r, 100)); // Allow UI to update
+            
+            try {
+                parseDECAExam(text);
+            } catch (e) {
+                loadingIndicator.querySelector('p').textContent = 'Parse Error: ' + e.message;
+                loadingIndicator.querySelector('.spinner').style.display = 'none';
+                return;
+            }
+            
+            if (questions.length === 0) {
+                loadingIndicator.querySelector('p').textContent = 'Error: Could not find any questions. Make sure it is a standard DECA exam.';
+                loadingIndicator.querySelector('.spinner').style.display = 'none';
+                return;
+            }
         }
 
         const newExam = {
